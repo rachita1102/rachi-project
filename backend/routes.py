@@ -3,6 +3,7 @@ from flask_security import auth_required, verify_password, hash_password, curren
 from backend.models import db, User, Service, ServiceProfessional, ServiceRequest
 from datetime import datetime
 
+cache = app.cache
 @app.route('/')
 def home():
     return render_template('index.html')
@@ -11,6 +12,11 @@ def home():
 @auth_required()
 def protected():
     return "<h1>Only accessible by authenticated users</h1>"
+
+@app.get('/cache')
+@cache.cached(timeout = 5)
+def cache():
+    return {'time': str(datetime.now())}
 
 @app.route('/login', methods=['POST'])
 def login():
@@ -467,7 +473,7 @@ def update_service(service_id):
 
     service.name = data.get("name", service.name)
     service.description = data.get("description", service.description)
-    service.base_payment= data.get("base_price", service.base_payment)
+    service.base_payment= data.get("base_payment", service.base_payment)
     service.min_time_required = data.get("min_time", service.min_time_required)
 
     db.session.commit()

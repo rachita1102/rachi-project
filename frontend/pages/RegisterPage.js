@@ -1,25 +1,25 @@
-export default { 
+export default {  
     template: `
-    <div class="container mt-4">
-        <div class="card p-4 shadow">
-            <h3 class="text-center mb-3">Register</h3>
+    <div class="container d-flex justify-content-center align-items-center vh-100">
+        <div class="card shadow-lg p-4" style="width: 400px; border-radius: 10px;">
+            <h3 class="text-center text-primary mb-4">Register</h3>
 
-            <div class="form-group">
+            <div class="form-group mb-3">
                 <input class="form-control" placeholder="Email" v-model="email"/>  
             </div>
-            <div class="form-group">
+            <div class="form-group mb-3">
                 <input class="form-control" placeholder="Password" type="password" v-model="password"/> 
             </div>
-            <div class="form-group">
+            <div class="form-group mb-3">
                 <input class="form-control" placeholder="First Name" v-model="fname"/> 
             </div>
-            <div class="form-group">
+            <div class="form-group mb-3">
                 <input class="form-control" placeholder="Last Name" v-model="lname"/> 
             </div>
 
             <!-- Location Dropdown -->
-            <div class="form-group">
-                <label for="location">Select Location:</label>
+            <div class="form-group mb-3">
+                <label class="fw-bold" for="location">Select Location:</label>
                 <select class="form-control" v-model="location" id="location">
                     <option disabled value="">Choose a location</option>
                     <option>New Delhi</option>
@@ -32,8 +32,8 @@ export default {
             </div>
 
             <!-- Role Selection -->
-            <div class="form-group">
-                <label for="role">Select Role:</label>
+            <div class="form-group mb-3">
+                <label class="fw-bold" for="role">Select Role:</label>
                 <select class="form-control" v-model="role" id="role">
                     <option value="Customer">Customer</option>
                     <option value="Service Professional">Professional</option>
@@ -42,18 +42,18 @@ export default {
             
             <!-- Service Professional Fields -->
             <div v-if="role === 'Service Professional'">
-                <div class="form-group">
-                    <label for="serviceType">Select Service Type:</label>
+                <div class="form-group mb-3">
+                    <label class="fw-bold" for="serviceType">Select Service Type:</label>
                     <select class="form-control" v-model="serviceType" id="serviceType">
                         <option v-for="service in services" :key="service.id" :value="service.id">{{ service.name }}</option>
                     </select>
                 </div>
-                <div class="form-group">
-                    <label for="experience">Experience (in years):</label>
+                <div class="form-group mb-3">
+                    <label class="fw-bold" for="experience">Experience (in years):</label>
                     <input class="form-control" type="number" v-model="experience" id="experience" />
                 </div>
-                <div class="form-group">
-                    <label for="panNumber">PAN Number:</label>
+                <div class="form-group mb-3">
+                    <label class="fw-bold" for="panNumber">PAN Number:</label>
                     <input class="form-control" type="text" v-model="panNumber" id="panNumber" />
                 </div>
             </div>
@@ -62,7 +62,7 @@ export default {
         </div>
     </div>
     `,
-    
+
     data() {
         return {
             email: '',

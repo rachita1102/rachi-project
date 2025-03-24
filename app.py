@@ -3,7 +3,7 @@ from flask import Flask
 from backend.config import LocalDevelopmentConfig
 from backend.models import db, User, Role
 from flask_security import Security, SQLAlchemyUserDatastore, auth_required
-# from flask_caching import Cache
+from flask_caching import Cache
 # from backend.celery.celery_factory import celery_init_app
 # import flask_excel as excel
 
@@ -15,13 +15,14 @@ def createApp():
     app.config.from_object(LocalDevelopmentConfig)
     print("Configuration loaded.") 
 
-
+    
     # model init
     db.init_app(app)
     print("Database initialized.")
     
-    # # cache init
-    # cache = Cache(app)
+    # cache init
+    cache = Cache(app)
+    app.cache = cache
 
 
     #flask security
