@@ -14,6 +14,8 @@ import CustServiceBook from "../pages/CustServiceBook.js";
 import CustomerRequests from "../pages/CustomerRequests.js";
 import ProfessionalRequests from "../pages/ProfessionalRequests.js";
 import AdminServicesTable from "../pages/AdminServicesTable.js";
+import ViewUsers from "../pages/ViewUsers.js";
+import AdminStats from "../pages/AdminStats.js";
 import store from './store.js';
 
 
@@ -33,12 +35,15 @@ const routes = [
     { path: '/customer-requests', component: CustomerRequests, meta: { requiresLogin: true, role: "Customer" } },
     { path: '/professional-requests', component: ProfessionalRequests, meta: { requiresLogin: true, role: "Service Professional" } },
     { path: '/custservicebook', component: CustServiceBook, meta: { requiresLogin: true, role: "Customer" } },
+    { path: '/admin/users', component: ViewUsers, meta: { requiresLogin: true, role: "admin" } },
     { path: '/service-professionals', component: ServiceProfessionalsPage, meta: { requiresLogin: true, role: "admin" } },
     {
         path: "/admin/services",
         component: AdminServicesTable,
         meta: { requiresLogin: true, role: "admin" }, // Ensure only admin users can access
-      }
+      },
+    { path: '/admin/stats-overview', component: AdminStats, meta: { requiresLogin: true, role: "admin" } }
+      
     // {path : '/explore', component : ExploreUsersPage }
 ]
 

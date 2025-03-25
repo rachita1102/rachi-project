@@ -14,6 +14,17 @@ export default {
           <button class="btn btn-primary w-100" @click="goToServiceTable">
               view Service
             </button>
+            <button class="btn btn-primary w-100" @click="goToViewUsers">
+              view users
+            </button>
+            <button class="btn btn-primary w-100" @click="goToViewUsers">
+              view users
+            </button>
+            <button class="btn btn-primary w-100" @click="goToViewStats">
+              view stats
+            </button>
+            
+
           </div>
         </div>
       </div>
@@ -27,6 +38,12 @@ export default {
       },
       goToServiceTable(){
         this.$router.push('/admin/services')
+      },
+      goToViewUsers() {
+        this.$router.push('/admin/users')
+      },
+      goToViewStats() {
+        this.$router.push('/admin/stats-overview')
       }
     }
   };

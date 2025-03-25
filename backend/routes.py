@@ -1,7 +1,8 @@
 from flask import current_app as app, request, jsonify, render_template,Blueprint
 from flask_security import auth_required, verify_password, hash_password, current_user
-from backend.models import db, User, Service, ServiceProfessional, ServiceRequest
+from backend.models import db, User, Service, ServiceProfessional, ServiceRequest, Role
 from datetime import datetime
+from sqlalchemy import func
 
 cache = app.cache
 @app.route('/')
@@ -487,3 +488,165 @@ def delete_service(service_id):
     db.session.delete(service)
     db.session.commit()
     return jsonify({"message": "Service deleted successfully."})
+
+# Update service request (only service date)
+@app.route("/customer/service-requests/update/<int:req_id>", methods=["PUT"])
+@auth_required('token')
+def update_service_request(req_id):
+    try:
+        data = request.get_json()
+        new_service_date = data.get("date_of_service")
+
+        if not new_service_date:
+            return jsonify({"error": "Service date is required"}), 400
+
+        try:
+            new_service_date = datetime.strptime(new_service_date, "%Y-%m-%d").date()
+        except ValueError:
+            return jsonify({"error": "Invalid date format. Use YYYY-MM-DD"}), 400
+
+        req = ServiceRequest.query.filter_by(id=req_id, customer_id=current_user.id).first()
+
+        if not req:
+            return jsonify({"error": "Service request not found"}), 404
+
+        if req.service_status != "requested":
+            return jsonify({"error": "Only requested service requests can be updated"}), 403
+
+        req.date_of_service = new_service_date
+        db.session.commit()
+
+        return jsonify({"message": "Service date updated successfully"}), 200
+
+    except Exception as e:
+        return jsonify({"error": "Failed to update service request", "message": str(e)}), 500
+
+# Delete service request
+@app.route("/customer/service-requests/delete/<int:req_id>", methods=["DELETE"])
+@auth_required('token')
+def delete_service_request(req_id):
+    try:
+        req = ServiceRequest.query.filter_by(id=req_id, customer_id=current_user.id).first()
+
+        if not req:
+            return jsonify({"error": "Service request not found"}), 404
+
+        if req.service_status != "requested":
+            return jsonify({"error": "Only requested service requests can be deleted"}), 403
+
+        db.session.delete(req)
+        db.session.commit()
+
+        return jsonify({"message": "Service request deleted successfully"}), 200
+
+    except Exception as e:
+        return jsonify({"error": "Failed to delete service request", "message": str(e)}), 500
+\
+
+@app.route('/admin/customers', methods=['GET'])
+def get_customers():
+    customer_role = Role.query.filter_by(name='Customer').first()
+    customers = User.query.filter(User.roles.contains(customer_role)).all()
+    return jsonify([{'id': customer.id, 'email': customer.email, 'fname': customer.fname, 'lname': customer.lname, 'location': customer.location, 'active': customer.active} for customer in customers])
+
+@app.route('/admin/professionals', methods=['GET'])
+def get_professionals():
+    professional_role = Role.query.filter_by(name='Service Professional').first()
+    professionals = User.query.filter(User.roles.contains(professional_role)).all()
+    return jsonify([{'id': professional.id, 'email': professional.email, 'fname': professional.fname, 'lname': professional.lname, 'location': professional.location, 'active': professional.active} for professional in professionals])
+
+@app.route('/api/block-user/<int:user_id>', methods=['POST'])
+def block_user(user_id):
+    user = User.query.get(user_id)
+    if user:
+        user.active = 0
+        db.session.commit()
+        
+        # Delete associated ServiceRequests
+        ServiceRequest.query.filter(
+            (ServiceRequest.customer_id == user_id) | (ServiceRequest.professional_id == user_id),
+            ServiceRequest.service_status.in_(['requested', 'assigned'])
+        ).delete()
+        db.session.commit()
+        
+        return jsonify({'message': 'User blocked successfully'})
+    else:
+        return jsonify({'message': 'User not found'}), 404
+
+@app.route('/api/unblock-user/<int:user_id>', methods=['POST'])
+def unblock_user(user_id):
+    user = User.query.get(user_id)
+    user.active = 1
+    db.session.commit()
+    return jsonify({'message': 'User unblocked successfully'})
+
+    # 🟢 Ensure Only Admins Can Access Stats
+def is_admin():
+    return any(role.name == "admin" for role in current_user.roles)
+
+
+@app.route("/admin/stats-overview", methods=["GET"])
+@auth_required('token')
+def admin_stats_overview():
+    if not is_admin():
+        return jsonify({"error": "Unauthorized"}), 403
+
+    try:
+        stats = {
+            "total_users": User.query.count(),
+            "total_service_professionals": ServiceProfessional.query.count(),
+            "total_customers": User.query.filter(User.roles.any(name="Customer")).count(),
+            "closed_services": ServiceRequest.query.filter_by(service_status="closed").count(),
+            "blocked_professionals": User.query.filter_by(active=-1).count(),
+            "blocked_customers": User.query.filter(User.roles.any(name="Customer"), User.active == -1).count()
+        }
+
+        return jsonify(stats), 200
+
+    except Exception as e:
+        return jsonify({"message": "Error fetching stats", "error": str(e)}), 500
+
+# 📊 **Bar Chart: No. of Service Professionals by Type**
+@app.route("/admin/service-professionals-by-type", methods=["GET"])
+@auth_required('token')  # Requires authentication via token
+def service_professionals_by_type():
+    try:
+        results = (
+            db.session.query(Service.name, func.count(ServiceProfessional.id))
+            .join(ServiceProfessional, Service.id == ServiceProfessional.service_id)
+            .group_by(Service.name)
+            .all()
+        )
+
+        data = {
+            "labels": [row[0] for row in results],  # Service Names
+            "values": [row[1] for row in results]   # Count of Professionals per Service
+        }
+
+        return jsonify(data), 200
+
+    except Exception as e:
+        print(f"Error fetching data: {str(e)}")
+        return jsonify({"message": "Error fetching data", "error": str(e)}), 500
+
+@app.route("/admin/service-requests-by-type", methods=["GET"])
+@auth_required('token')  # Requires authentication via token
+def service_requests_by_type():
+    try:
+        result = (
+            db.session.query(Service.name, func.count(ServiceRequest.id))
+            .join(ServiceRequest, Service.id == ServiceRequest.service_id)
+            .group_by(Service.name)
+            .all()
+        )
+
+        data = {
+            "labels": [row[0] for row in result],  # Service Names
+            "values": [row[1] for row in result]   # Count of Requests per Service
+        }
+
+        return jsonify(data), 200
+
+    except Exception as e:
+        print(f"Error fetching data: {str(e)}")
+        return jsonify({"message": "Error fetching data", "error": str(e)}), 500
