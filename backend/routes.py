@@ -3,8 +3,31 @@ from flask_security import auth_required, verify_password, hash_password, curren
 from backend.models import db, User, Service, ServiceProfessional, ServiceRequest, Role
 from datetime import datetime
 from sqlalchemy import func
+from backend.celery.tasks import add
+from celery.result import AsyncResult
+
+@app.get('/celery')
+def celery():
+    task = add.delay(10,20)
+    return {'task_id': task.id }
+
+@app.get('/get-celery-data/<id>')
+def getData(id):
+    result = AsyncResult(id)
+
+    if result.ready():
+        return {'result' : result.result},200
+    else:
+        return {'message' :'task not ready'}
 
 cache = app.cache
+
+# @app.get('/create-csv')
+# def createCSV():
+#     task= create_csv.delay()
+#     return {'task_id':task.id},200
+
+
 @app.route('/')
 def home():
     return render_template('index.html')
@@ -650,3 +673,8 @@ def service_requests_by_type():
     except Exception as e:
         print(f"Error fetching data: {str(e)}")
         return jsonify({"message": "Error fetching data", "error": str(e)}), 500
+
+@app.route('/api/locations', methods=['GET'])
+def get_locations():
+    locations = db.session.query(User.location).distinct().all()
+    return jsonify([location[0] for location in locations])

@@ -23,6 +23,7 @@ export default {
                 <td>
                   <button v-if="user.active === 1" @click="blockUser(user.id)">Block</button>
                   <button v-else @click="unblockUser(user.id)">Unblock</button>
+                  
                 </td>
               </tr>
             </tbody>

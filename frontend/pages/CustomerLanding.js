@@ -12,7 +12,7 @@ export default {
                 </button>
             </div>
 
-            <div class="col-md-4 mb-4" v-for="service in services" :key="service.id">
+            <div class="col-md-4 mb-4" v-for="service in filteredServices" :key="service.id">
                 <div class="card shadow-sm">
                     <img :src="service.image || 'https://via.placeholder.com/150'" class="card-img-top" alt="Service Image">
                     <div class="card-body">
@@ -24,15 +24,26 @@ export default {
                 </div>
             </div>
         </div>
+
+        <div class="row">
+            <div class="col-md-6 mb-3">
+                <input type="text" class="form-control" v-model="keyword" placeholder="Search by service name">
+            </div>
+            
+        </div>
     </div>
     `,
     data() {
         return {
-            services: []
+            services: [],
+            keyword: '',
+            location: '',
+            locations: []
         };
     },
     mounted() {
         this.fetchServices();
+        this.fetchLocations();
     },
     methods: {
         async fetchServices() {
@@ -41,6 +52,14 @@ export default {
                 this.services = await response.json();
             } catch (error) {
                 console.error("❌ Error loading services:", error);
+            }
+        },
+        async fetchLocations() {
+            try {
+                const response = await fetch('/api/locations');
+                this.locations = await response.json();
+            } catch (error) {
+                console.error("❌ Error loading locations:", error);
             }
         },
         async bookService(serviceId) {
@@ -64,6 +83,15 @@ export default {
         },
         goToServiceRequests() {
             this.$router.push('/customer-requests'); // Ensure correct path
+        }
+    },
+    computed: {
+        filteredServices() {
+            return this.services.filter(service => {
+                const keywordMatch = service.name.toLowerCase().includes(this.keyword.toLowerCase());
+                const locationMatch = this.location === '' || service.service_professionals.some(professional => professional.location === this.location);
+                return keywordMatch && locationMatch;
+            });
         }
     }
 };

@@ -4,8 +4,8 @@ from backend.config import LocalDevelopmentConfig
 from backend.models import db, User, Role
 from flask_security import Security, SQLAlchemyUserDatastore, auth_required
 from flask_caching import Cache
-# from backend.celery.celery_factory import celery_init_app
-# import flask_excel as excel
+from backend.celery.celery_factory import celery_init_app
+import flask_excel as excel
 
 
 def createApp():
@@ -42,7 +42,7 @@ def createApp():
 print("Starting app creation...")
 app = createApp()
 
-# celery_app = celery_init_app(app)
+celery_app = celery_init_app(app)
 
 import backend.create_initial_data
 
@@ -50,13 +50,14 @@ import backend.routes
 
 # import backend.celery.celery_schedule
 
-# excel.init_excel(app)
+excel.init_excel(app)
 # @app.get('/')
 # def home():
 #     return '<h1> home page </h1>'
 
 # @app.get('/protected')
 # @auth_required()
+
 # def protected():
 #     return '<h1> only accessible by auth user</h1>'
 
